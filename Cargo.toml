@@ -10,3 +10,6 @@ palette = "0.7"
 winreg = "0.52"
 eframe = "0.27"
 egui = "0.27"
+
+[build]
+rustflags = ["-C", "link-args=/SUBSYSTEM:WINDOWS"]
