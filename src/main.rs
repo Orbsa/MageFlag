@@ -4,11 +4,11 @@ use std::time::Duration;
 
 use arboard::Clipboard;
 use chrono::{DateTime, Local};
-use eframe::{egui, App, CreationContext};
-use image::{DynamicImage, GenericImageView, RgbaImage, imageops::FilterType, Pixel};
-use palette::{Lab, Srgb, FromColor};
-use winreg::{RegKey, RegValue};
+use eframe::{App, CreationContext, egui};
+use image::{DynamicImage, GenericImageView, Pixel, RgbaImage, imageops::FilterType};
+use palette::{FromColor, Lab, Srgb};
 use winreg::enums::{HKEY_CURRENT_USER, RegType};
+use winreg::{RegKey, RegValue};
 
 // === CONFIG ===
 const IMAGE_WIDTH: u32 = 100;
@@ -22,18 +22,10 @@ const REGISTRY_VALUE_NAME: &str = "flagGrid_h3042110417";
 const EMBEDDED_PALETTE: &[u8] = include_bytes!("palette.png");
 
 // === UI STATE ===
+#[derive(Default)]
 struct AppState {
     last_update: Option<String>,
     quit_requested: bool,
-}
-
-impl Default for AppState {
-    fn default() -> Self {
-        Self {
-            last_update: None,
-            quit_requested: false,
-        }
-    }
 }
 
 struct MageFlagApp {
@@ -46,9 +38,11 @@ impl App for MageFlagApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("📋 Clipboard Watcher");
-            ui.label("This tool watches your clipboard for images and writes them to the registry.");
+            ui.label(
+                "This tool watches your clipboard for images and writes them to the registry.",
+            );
             if let Some(ref status) = state.last_update {
-                ui.label(format!("✅ Last update: {}", status));
+                ui.label(format!("✅ Last update: {status}"));
             } else {
                 ui.label("No clipboard image captured yet.");
             }
@@ -71,13 +65,16 @@ impl App for MageFlagApp {
 fn main() -> eframe::Result<()> {
     let state = Arc::new(Mutex::new(AppState::default()));
     let ui_state = Arc::clone(&state);
-    let palette_image = image::load_from_memory(EMBEDDED_PALETTE).expect("Invalid embedded palette");
+    let palette_image =
+        image::load_from_memory(EMBEDDED_PALETTE).expect("Invalid embedded palette");
     let palette = sample_palette(&palette_image);
 
     // Spawn clipboard watcher thread
     thread::spawn(move || {
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-        let (key, _) = hkcu.create_subkey(REGISTRY_PATH).expect("Failed to open registry key");
+        let (key, _) = hkcu
+            .create_subkey(REGISTRY_PATH)
+            .expect("Failed to open registry key");
 
         let mut clipboard = Clipboard::new().unwrap();
         let mut last_hash: u64 = 0;
@@ -95,8 +92,11 @@ fn main() -> eframe::Result<()> {
                     )
                     .expect("Invalid clipboard image");
 
-                    let resized: DynamicImage = DynamicImage::ImageRgba8(raw)
-                        .resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Nearest);
+                    let resized: DynamicImage = DynamicImage::ImageRgba8(raw).resize_exact(
+                        IMAGE_WIDTH,
+                        IMAGE_HEIGHT,
+                        FilterType::Nearest,
+                    );
 
                     let csv = encode_uv_csv(&resized, &palette);
                     let reg_value = RegValue {
@@ -109,9 +109,9 @@ fn main() -> eframe::Result<()> {
 
                     let mut state = state.lock().unwrap();
 
-					let now = std::time::SystemTime::now();
-					let now_local: DateTime<Local> = now.into();
-					state.last_update = Some(now_local.format("%Y-%m-%d %H:%M:%S").to_string());
+                    let now = std::time::SystemTime::now();
+                    let now_local: DateTime<Local> = now.into();
+                    state.last_update = Some(now_local.format("%Y-%m-%d %H:%M:%S").to_string());
                 }
             }
 
@@ -188,11 +188,7 @@ fn average_patch(img: &DynamicImage, cx: u32, cy: u32) -> [u8; 3] {
         }
     }
 
-    [
-        (r / count) as u8,
-        (g / count) as u8,
-        (b / count) as u8,
-    ]
+    [(r / count) as u8, (g / count) as u8, (b / count) as u8]
 }
 
 fn encode_uv_csv(img: &DynamicImage, palette: &[[u8; 3]]) -> String {
@@ -217,7 +213,7 @@ fn encode_uv_csv(img: &DynamicImage, palette: &[[u8; 3]]) -> String {
             let u = (col as f32 + 0.5) / PALETTE_COLS as f32;
             let v = (row as f32 + 0.5) / PALETTE_ROWS as f32;
 
-            result.push(format!("{:.2}:{:.2}", u, v));
+            result.push(format!("{u:.2}:{v:.2}"));
         }
     }
 
