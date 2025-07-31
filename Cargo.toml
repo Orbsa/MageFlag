@@ -14,3 +14,6 @@ chrono = "0.4.41"
 
 [build]
 rustflags = ["-C", "link-args=/SUBSYSTEM:WINDOWS"]
+
+[dev-dependencies]
+clippy = "0.0.302"
