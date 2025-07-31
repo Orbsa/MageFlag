@@ -3,6 +3,7 @@ use std::thread;
 use std::time::Duration;
 
 use arboard::Clipboard;
+use chrono::{DateTime, Local};
 use eframe::{egui, App, CreationContext};
 use image::{DynamicImage, GenericImageView, RgbaImage, imageops::FilterType, Pixel};
 use palette::{Lab, Srgb, FromColor};
@@ -107,7 +108,10 @@ fn main() -> eframe::Result<()> {
                         .expect("Failed to write to registry");
 
                     let mut state = state.lock().unwrap();
-                    state.last_update = Some(format!("{:?}", std::time::SystemTime::now()));
+
+					let now = std::time::SystemTime::now();
+					let now_local: DateTime<Local> = now.into();
+					state.last_update = Some(now_local.format("%Y-%m-%d %H:%M:%S").to_string());
                 }
             }
 
